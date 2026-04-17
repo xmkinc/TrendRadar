@@ -99,10 +99,7 @@ rss:
   # - 0：禁用此频道的新鲜度过滤，推送所有文章
   feeds:
     # ═══ AI 公司官方 Blog（一手源，必追）═══
-    # Anthropic 官網無 RSS,走 Google News 定向查詢
-    - id: "anthropic-news"
-      name: "Anthropic News"
-      url: "https://news.google.com/rss/search?q=Anthropic+Claude&hl=en-US&gl=US&ceid=US:en"
+    # 注：Anthropic 官網未提供 RSS，暫不收錄；有更新時考慮用 Twitter/X 外部工具轉 feed
 
     - id: "openai-blog"
       name: "OpenAI Blog"
@@ -113,10 +110,7 @@ rss:
       url: "https://deepmind.google/blog/rss.xml"
 
     # ═══ 硬核 AI 媒體（深度內容）═══
-    # The Batch 無官方 RSS,走 Google News 定向查詢
-    - id: "the-batch"
-      name: "The Batch"
-      url: "https://news.google.com/rss/search?q=%22The+Batch%22+deeplearning.ai&hl=en-US&gl=US&ceid=US:en"
+    # 注：The Batch 未提供 RSS 訂閱地址，只能手動訪問 deeplearning.ai/the-batch
 
     - id: "import-ai"
       name: "Import AI"
@@ -280,7 +274,7 @@ display:
   # 两者共享此处的平台/RSS 配置，但开关互相独立（可只开 AI 分析、不推送展示）
   standalone:
     platforms: []                                  # AI 垂直版：不需要完整熱榜獨立展示
-    rss_feeds: ["anthropic-news", "openai-blog"]   # AI 一手源全文獨立展示
+    rss_feeds: ["openai-blog", "google-deepmind"]  # AI 一手源全文獨立展示
     max_items: 20                     # 每个源最多展示条数（0=不限制）
 
 
@@ -572,8 +566,8 @@ advanced:
   rss:
     request_interval: 1000            # 请求间隔（毫秒）
     timeout: 15                       # 请求超时（秒）
-    use_proxy: false                  # 是否使用代理
-    proxy_url: ""                     # RSS 专属代理（留空则使用 crawler.default_proxy）
+    use_proxy: false                  # 關:Clash 節點 TLS 不穩,走代理反而把原本能通的源搞掛。DeepMind/Import AI 偶爾失敗可接受。
+    proxy_url: "http://172.22.176.1:7890"  # 保留待未來換穩定代理節點時再開
 
   # 排序权重（用于重新排序不同平台的热搜）
   # 合起来等于 1
