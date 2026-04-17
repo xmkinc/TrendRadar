@@ -55,28 +55,13 @@ schedule:
 platforms:
   enabled: true                         # 是否启用热榜平台抓取
   sources:
+    # AI 垂直版：只保留三個偶爾會出 AI 熱點的通用中文平台
     - id: "toutiao"
       name: "今日头条"
     - id: "baidu"
       name: "百度热搜"
-    - id: "wallstreetcn-hot"
-      name: "华尔街见闻"
-    - id: "thepaper"
-      name: "澎湃新闻"
-    - id: "bilibili-hot-search"
-      name: "bilibili 热搜"
-    - id: "cls-hot"
-      name: "财联社热门"
-    - id: "ifeng"
-      name: "凤凰网"
-    - id: "tieba"
-      name: "贴吧"
     - id: "weibo"
       name: "微博"
-    - id: "douyin"
-      name: "抖音"
-    - id: "zhihu"
-      name: "知乎"
 
 
 
@@ -113,26 +98,40 @@ rss:
   # - 正整数：覆盖全局设置，只推送此天数内的文章
   # - 0：禁用此频道的新鲜度过滤，推送所有文章
   feeds:
+    # ═══ AI 公司官方 Blog（一手源，必追）═══
+    - id: "anthropic-news"
+      name: "Anthropic News"
+      url: "https://www.anthropic.com/news/rss.xml"
+
+    - id: "openai-blog"
+      name: "OpenAI Blog"
+      url: "https://openai.com/blog/rss.xml"
+
+    - id: "google-deepmind"
+      name: "Google DeepMind"
+      url: "https://deepmind.google/blog/rss.xml"
+
+    # ═══ 硬核 AI 媒體（深度內容）═══
+    - id: "the-batch"
+      name: "The Batch"
+      url: "https://www.deeplearning.ai/the-batch/feed/"
+
+    - id: "import-ai"
+      name: "Import AI"
+      url: "https://importai.substack.com/feed"
+
+    - id: "latent-space"
+      name: "Latent Space"
+      url: "https://www.latent.space/feed"
+
+    # ═══ 社區熱度（HN 雙通道：AI 專題 + 首頁）═══
+    - id: "hn-ai"
+      name: "Hacker News AI"
+      url: "https://hnrss.org/newest?q=AI+OR+LLM+OR+GPT+OR+Claude"
+
     - id: "hacker-news"
-      name: "Hacker News"
+      name: "Hacker News Frontpage"
       url: "https://hnrss.org/frontpage"
-
-    - id: "ruanyifeng"
-      name: "阮一峰的网络日志"
-      url: "http://www.ruanyifeng.com/blog/atom.xml"
-      enabled: false                  # 禁用
-      # max_age_days: 3               # 示例：推送 3 天内的文章（更新较慢的博客）
-     
-    - id: "yahoo-finance"
-      name: "雅虎财经"
-      url: "https://finance.yahoo.com/news/rssindex"
-
-    # 自定义源示例
-    # - id: "custom-feed"
-    #   name: "自定义源"
-    #   url: "https://example.com/feed.xml"
-    #   enabled: false
-    #   max_age_days: 0               # 示例：禁用过滤，推送所有文章
 
 
 # ===============================================================
@@ -178,7 +177,7 @@ report:
 # 5) 这里决定“筛选路径”，不决定 AI 模型（模型在 ai 段）
 # ===============================================================
 filter:
-  method: "ai"                     # 可选: keyword | ai
+  method: "keyword"                # 可选: keyword | ai（AI 垂直版用 frequency_words.txt 做關鍵詞過濾）
 
   # AI 模式标签排序开关（仅 ai 模式生效）
   # true: 按标签优先级排序（来自兴趣描述提取顺序）
@@ -278,8 +277,8 @@ display:
   #   - AI 分析：由 ai_analysis.include_standalone 开关控制，将完整数据送入 AI 做深度分析
   # 两者共享此处的平台/RSS 配置，但开关互相独立（可只开 AI 分析、不推送展示）
   standalone:
-    platforms: ["zhihu", "wallstreetcn-hot"]     # 热榜平台 ID 列表（如 ["zhihu", "weibo"]）
-    rss_feeds: []                     # RSS 源 ID 列表（如 ["hacker-news"]）
+    platforms: []                                  # AI 垂直版：不需要完整熱榜獨立展示
+    rss_feeds: ["anthropic-news", "openai-blog"]   # AI 一手源全文獨立展示
     max_items: 20                     # 每个源最多展示条数（0=不限制）
 
 
@@ -507,7 +506,7 @@ ai_analysis:
                                       # GitHub Action 部署默认推送约 20 次（每小时推送一次）， 约 0.1 元/天
                                       # Docker 部署默认推送 48 次(每半小时推送一次)， 约 0.2 元/天
 
-  include_rss: false                # 是否包含 RSS 内容进行分析
+  include_rss: true                 # AI 垂直版：RSS 是一手源，必須納入 AI 分析
   
   include_standalone: true          # 是否将独立展示区数据纳入 AI 分析
                                     # 数据源列表来自 display.standalone.platforms / display.standalone.rss_feeds
