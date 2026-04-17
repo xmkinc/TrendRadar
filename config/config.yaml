@@ -99,9 +99,10 @@ rss:
   # - 0：禁用此频道的新鲜度过滤，推送所有文章
   feeds:
     # ═══ AI 公司官方 Blog（一手源，必追）═══
+    # Anthropic 官網無 RSS,走 Google News 定向查詢
     - id: "anthropic-news"
       name: "Anthropic News"
-      url: "https://www.anthropic.com/news/rss.xml"
+      url: "https://news.google.com/rss/search?q=Anthropic+Claude&hl=en-US&gl=US&ceid=US:en"
 
     - id: "openai-blog"
       name: "OpenAI Blog"
@@ -112,9 +113,10 @@ rss:
       url: "https://deepmind.google/blog/rss.xml"
 
     # ═══ 硬核 AI 媒體（深度內容）═══
+    # The Batch 無官方 RSS,走 Google News 定向查詢
     - id: "the-batch"
       name: "The Batch"
-      url: "https://www.deeplearning.ai/the-batch/feed/"
+      url: "https://news.google.com/rss/search?q=%22The+Batch%22+deeplearning.ai&hl=en-US&gl=US&ceid=US:en"
 
     - id: "import-ai"
       name: "Import AI"
