@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   topic-radar:
-    runs-on: self-hosted
+    runs-on: ${{ github.event.inputs.runner || 'ubuntu-latest' }}
     timeout-minutes: 12
 
     steps:
