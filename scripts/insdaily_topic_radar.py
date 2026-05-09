@@ -64,6 +64,16 @@ def load_yaml(path: Path) -> Dict[str, Any]:
         return yaml.safe_load(f) or {}
 
 
+def report_config(config: Dict[str, Any], mode: str) -> Dict[str, Any]:
+    app = config.get("app", {})
+    modes = app.get("modes", {})
+    selected = modes.get(mode, {})
+    merged = dict(app)
+    merged.update(selected)
+    merged["mode"] = mode
+    return merged
+
+
 def configured_now(timezone_name: str) -> datetime:
     if ZoneInfo is None:
         return datetime.now(timezone.utc)
@@ -234,14 +244,19 @@ def collect_sitemap(source: Dict[str, Any]) -> List[SourceItem]:
     return items
 
 
-def collect_sources(config: Dict[str, Any]) -> Tuple[List[SourceItem], List[str]]:
+def collect_sources(config: Dict[str, Any], mode: str = "daily") -> Tuple[List[SourceItem], List[str]]:
     all_items: List[SourceItem] = []
     warnings: List[str] = []
     seen: set[str] = set()
     seen_urls: set[str] = set()
+    app = report_config(config, mode)
+    source_ids = set(app.get("source_ids") or [])
 
     for source in config.get("sources", []):
-        if not source.get("enabled", True):
+        if source_ids:
+            if source.get("id") not in source_ids:
+                continue
+        elif not source.get("enabled", True):
             if source.get("warn_when_disabled", False):
                 note = source.get("note", "disabled")
                 warnings.append(f"{source.get('name', source.get('id'))}: skipped ({note})")
@@ -278,7 +293,12 @@ def keyword_hits(title: str, keywords: List[str]) -> List[str]:
         if not keyword:
             continue
         needle = str(keyword).lower()
-        if needle in haystack:
+        if re.fullmatch(r"[a-z0-9]+", needle):
+            pattern = rf"(?<![a-z0-9]){re.escape(needle)}(?![a-z0-9])"
+            matched = re.search(pattern, haystack) is not None
+        else:
+            matched = needle in haystack
+        if matched:
             hits.append(str(keyword))
     return hits
 
@@ -299,15 +319,17 @@ def recency_score(published_at: str, now: datetime, freshness_days: int) -> Tupl
     return -4.0, f"超过{freshness_days}天"
 
 
-def score_items(items: List[SourceItem], config: Dict[str, Any]) -> List[SourceItem]:
+def score_items(items: List[SourceItem], config: Dict[str, Any], mode: str = "daily") -> List[SourceItem]:
     source_weights = {s["id"]: float(s.get("weight", 1.0)) for s in config.get("sources", [])}
     topic_groups = config.get("topic_groups", [])
+    viral_patterns = config.get("viral_patterns", [])
     exclude_signals = config.get("title_signals", {}).get("exclude", [])
     strong_signals = config.get("title_signals", {}).get("strong", [])
     weak_penalties = config.get("title_signals", {}).get("weak_penalty", [])
-    app = config.get("app", {})
+    app = report_config(config, mode)
     now = configured_now(app.get("timezone", "Asia/Shanghai"))
     freshness_days = int(app.get("freshness_days", 3))
+    topic_ids = set(app.get("topic_ids") or [])
 
     scored: List[SourceItem] = []
     for item in items:
@@ -317,6 +339,8 @@ def score_items(items: List[SourceItem], config: Dict[str, Any]) -> List[SourceI
         best: Optional[Dict[str, Any]] = None
         best_hits: List[str] = []
         for group in topic_groups:
+            if topic_ids and group.get("id") not in topic_ids:
+                continue
             hits = keyword_hits(title, group.get("keywords", []))
             if item.category:
                 hits.extend(keyword_hits(item.category, group.get("keywords", [])))
@@ -343,6 +367,18 @@ def score_items(items: List[SourceItem], config: Dict[str, Any]) -> List[SourceI
             score += min(10.0, 2.5 * len(strong_hits))
             notes.append(f"强信号：{', '.join(strong_hits[:3])}")
 
+        pattern_accounts: List[str] = []
+        pattern_hits: List[str] = []
+        for pattern in viral_patterns:
+            hits = keyword_hits(title, pattern.get("keywords", []))
+            if not hits:
+                continue
+            score += float(pattern.get("boost", 0))
+            pattern_hits.append(str(pattern.get("label") or pattern.get("id")))
+            pattern_accounts.extend(str(account) for account in pattern.get("accounts", []) if account)
+        if pattern_hits:
+            notes.append(f"爆文库模型：{', '.join(pattern_hits[:3])}")
+
         penalty_hits = keyword_hits(title, weak_penalties)
         if penalty_hits and best.get("id") != "consumer_lifestyle":
             score -= min(8.0, 2.0 * len(penalty_hits))
@@ -358,7 +394,11 @@ def score_items(items: List[SourceItem], config: Dict[str, Any]) -> List[SourceI
         item.topic_id = best.get("id", "")
         item.topic_label = best.get("label", "")
         item.angle = best.get("angle", "")
-        item.accounts = list(best.get("accounts", []))
+        accounts = list(best.get("accounts", []))
+        for account in pattern_accounts:
+            if account not in accounts:
+                accounts.append(account)
+        item.accounts = accounts
         item.matched_keywords = best_hits
         item.score_notes = notes
         scored.append(item)
@@ -389,19 +429,35 @@ def title_ideas(item: SourceItem) -> List[str]:
     return [f"{base}，为什么中文读者会有感觉？", f"海外这件事，放到中文语境里更有意思"]
 
 
+def story_signature(item: SourceItem) -> str:
+    title = normalize_text(item.title)
+    names = re.findall(r"\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,3}\b", title)
+    names = [name for name in names if name not in {"Daily Mail", "Page Six", "Met Gala"}]
+    if names:
+        return "|".join(sorted(set(names))[:3]).lower()
+    words = re.findall(r"[\w\u4e00-\u9fff]+", title.lower())
+    useful = [w for w in words if len(w) >= 4][:6]
+    return "|".join(useful)
+
+
 def select_diverse(scored: List[SourceItem], top_n: int, max_per_topic: int) -> List[SourceItem]:
     if max_per_topic <= 0:
         return scored[:top_n]
 
     picked: List[SourceItem] = []
     topic_counts: Dict[str, int] = {}
+    story_counts: Dict[str, int] = {}
     deferred: List[SourceItem] = []
 
     for item in scored:
         topic = item.topic_id or "unknown"
-        if topic_counts.get(topic, 0) < max_per_topic:
+        story = story_signature(item)
+        is_duplicate_story = bool(story and story_counts.get(story, 0) >= 1)
+        if topic_counts.get(topic, 0) < max_per_topic and not is_duplicate_story:
             picked.append(item)
             topic_counts[topic] = topic_counts.get(topic, 0) + 1
+            if story:
+                story_counts[story] = story_counts.get(story, 0) + 1
         else:
             deferred.append(item)
         if len(picked) >= top_n:
@@ -420,9 +476,12 @@ def build_report(
     warnings: List[str],
     config: Dict[str, Any],
     generated_at: datetime,
+    top_n_override: Optional[int] = None,
+    push_mode: bool = False,
+    mode: str = "daily",
 ) -> str:
-    app = config.get("app", {})
-    top_n = int(app.get("top_n", 18))
+    app = report_config(config, mode)
+    top_n = int(top_n_override if top_n_override is not None else app.get("top_n", 18))
     max_per_topic = int(app.get("max_per_topic", 0))
     top_items = select_diverse(scored, top_n, max_per_topic)
 
@@ -431,8 +490,9 @@ def build_report(
         by_topic[item.topic_label] = by_topic.get(item.topic_label, 0) + 1
 
     lines = [
-        "# insdaily 选题雷达",
+        f"# {app.get('title') or 'insdaily 选题雷达'}",
         "",
+        f"- 模式：{mode}；{app.get('description', '')}",
         f"- 生成时间：{generated_at.strftime('%Y-%m-%d %H:%M:%S')}",
         f"- 抓取素材：{all_count} 条；命中选题库：{len(scored)} 条；输出 Top {len(top_items)}",
         f"- 覆盖方向：{', '.join(f'{k} {v}' for k, v in sorted(by_topic.items(), key=lambda x: x[1], reverse=True)[:8]) or '暂无'}",
@@ -457,7 +517,7 @@ def build_report(
                 f"- 来源：{item.source_name}；时间：{format_time(item.published_at)}；分数：{item.raw_score}",
                 f"- 链接：{item.url}",
                 f"- 推荐角度：{item.angle}",
-                f"- 对标参考：{', '.join(item.accounts) if item.accounts else '无'}",
+                f"- 建议账号：{', '.join(item.accounts) if item.accounts else '待定'}",
                 f"- 判断依据：{'; '.join(item.score_notes)}",
                 "- 备选标题：",
             ]
@@ -473,22 +533,33 @@ def build_report(
         [
             "",
             "## 使用建议",
-            "- 外网源用于找事实和新鲜度，公众号参考源用于判断中文语境里的角度、标题和情绪。",
-            "- TMZ/BuzzFeed 类素材适合快反，但涉及人物关系、法律、健康和争议时要用 Guardian/NYT/HK01 或官方声明二次确认。",
-            "- People 当前在本网络下返回 402，建议人工浏览或后续接入代理/第三方 RSS 后再自动化。",
+            "- 外网和参考公众号只用于找素材、网感和中文表达，不作为对标账号。",
+            "- 账号承接按自有矩阵分配：insdaily 做广谱热点，girldaily 做女性情绪，insdaily人物 做人物故事。",
+            "- TMZ/Daily Mail/Page Six 类素材适合快反，但涉及人物关系、法律、健康和争议时要用 HK01、当事人声明或第二家主流媒体确认。",
+            "- 时效选题适合当天快反，专题选题适合周会讨论、沉淀角度和做二次加工。",
+            "- 默认飞书版只推精简 Top；完整候选仍保存在本地 JSON，可按专题临时打开更多源。",
         ]
     )
+
+    if push_mode:
+        lines.extend(["", "（精简版：只推最值得看的选题，完整候选见本地 JSON 报告。）"])
 
     return "\n".join(lines).strip() + "\n"
 
 
-def save_outputs(scored: List[SourceItem], report: str, config: Dict[str, Any], generated_at: datetime) -> Tuple[Path, Path]:
+def save_outputs(
+    scored: List[SourceItem],
+    report: str,
+    config: Dict[str, Any],
+    generated_at: datetime,
+    mode: str = "daily",
+) -> Tuple[Path, Path]:
     output_root = Path(config.get("app", {}).get("output_dir", "output/insdaily"))
     day_dir = output_root / generated_at.strftime("%Y-%m-%d")
     day_dir.mkdir(parents=True, exist_ok=True)
     stem = generated_at.strftime("%H-%M")
-    md_path = day_dir / f"{stem}-topic-report.md"
-    json_path = day_dir / f"{stem}-topic-report.json"
+    md_path = day_dir / f"{stem}-{mode}-topic-report.md"
+    json_path = day_dir / f"{stem}-{mode}-topic-report.json"
 
     md_path.write_text(report, encoding="utf-8")
     json_path.write_text(
@@ -513,16 +584,18 @@ def send_feishu_text(webhook_url: str, content: str) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run insdaily topic radar")
     parser.add_argument("--config", default="config/insdaily_sources.yaml", help="Path to insdaily source config")
+    parser.add_argument("--mode", choices=["daily", "weekly"], default="daily", help="Report mode")
     parser.add_argument("--push", action="store_true", help="Push report to Feishu when FEISHU_WEBHOOK_URL is set")
     args = parser.parse_args()
 
     config = load_yaml(Path(args.config))
-    generated_at = configured_now(config.get("app", {}).get("timezone", "Asia/Shanghai"))
+    app = report_config(config, args.mode)
+    generated_at = configured_now(app.get("timezone", "Asia/Shanghai"))
 
-    items, warnings = collect_sources(config)
-    scored = score_items(items, config)
-    report = build_report(scored, len(items), warnings, config, generated_at)
-    md_path, json_path = save_outputs(scored, report, config, generated_at)
+    items, warnings = collect_sources(config, args.mode)
+    scored = score_items(items, config, args.mode)
+    report = build_report(scored, len(items), warnings, config, generated_at, mode=args.mode)
+    md_path, json_path = save_outputs(scored, report, config, generated_at, args.mode)
 
     print(f"[DONE] Markdown: {md_path}")
     print(f"[DONE] JSON: {json_path}")
@@ -530,7 +603,18 @@ def main() -> int:
     if args.push:
         webhook = os.environ.get("FEISHU_WEBHOOK_URL", "").strip()
         if webhook:
-            send_feishu_text(webhook, report)
+            push_top_n = int(app.get("push_top_n", app.get("top_n", 10)))
+            push_report = build_report(
+                scored,
+                len(items),
+                warnings,
+                config,
+                generated_at,
+                top_n_override=push_top_n,
+                push_mode=True,
+                mode=args.mode,
+            )
+            send_feishu_text(webhook, push_report)
             print("[DONE] Feishu pushed")
         else:
             print("[WARN] --push requested but FEISHU_WEBHOOK_URL is empty")

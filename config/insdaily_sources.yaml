@@ -7,10 +7,68 @@
 app:
   timezone: "Asia/Shanghai"
   freshness_days: 3
-  max_items_per_source: 60
-  top_n: 24
-  max_per_topic: 4
+  max_items_per_source: 40
+  top_n: 10
+  push_top_n: 8
+  max_per_topic: 3
   output_dir: "output/insdaily"
+  modes:
+    daily:
+      title: "insdaily 今日时效选题"
+      description: "每天/每天两次推送，主打当天能发的明星、娱乐、海外社会和关系热议。"
+      freshness_days: 2
+      top_n: 10
+      push_top_n: 6
+      max_per_topic: 2
+      source_ids:
+        - "hk01-news-sitemap"
+        - "eonline-top-stories"
+        - "us-weekly"
+        - "entertainment-tonight"
+        - "ettoday-star"
+        - "soompi"
+        - "hello-magazine"
+        - "daily-mail-showbiz"
+        - "page-six"
+        - "koreaboo"
+        - "tmz-all"
+        - "bustle"
+      topic_ids:
+        - "celebrity_fashion"
+        - "overseas_society"
+        - "women_relationships"
+        - "uk_life_study"
+        - "people_story"
+        - "weird_internet"
+    weekly:
+      title: "insdaily 专题选题池"
+      description: "每周推送，主打可策划、可二次加工的女性、人物、消费、审美和海外生活专题。"
+      freshness_days: 10
+      top_n: 14
+      push_top_n: 10
+      max_per_topic: 3
+      source_ids:
+        - "hk01-news-sitemap"
+        - "vogue"
+        - "harpers-bazaar"
+        - "hypebae"
+        - "vanity-fair"
+        - "dazed"
+        - "refinery29"
+        - "bustle"
+        - "cosmopolitan"
+        - "glamour"
+        - "mail-online-news"
+        - "metro-uk"
+        - "hello-magazine"
+        - "daily-mail-showbiz"
+      topic_ids:
+        - "women_relationships"
+        - "people_story"
+        - "consumer_lifestyle"
+        - "celebrity_fashion"
+        - "uk_life_study"
+        - "overseas_society"
 
 sources:
   # A 档：每天优先看的主源。更贴近 insdaily 的爆文盘：人物、明星、
@@ -22,7 +80,7 @@ sources:
     enabled: true
     weight: 1.25
     tier: "A"
-    max_items: 100
+    max_items: 60
     include_categories:
       - "即時國際"
       - "熱爆話題"
@@ -41,7 +99,7 @@ sources:
     enabled: true
     weight: 1.25
     tier: "A"
-    max_items: 40
+    max_items: 25
 
   - id: "us-weekly"
     name: "Us Weekly"
@@ -50,7 +108,7 @@ sources:
     enabled: true
     weight: 1.22
     tier: "A"
-    max_items: 35
+    max_items: 20
 
   - id: "entertainment-tonight"
     name: "Entertainment Tonight"
@@ -59,7 +117,7 @@ sources:
     enabled: true
     weight: 1.15
     tier: "A"
-    max_items: 30
+    max_items: 15
 
   - id: "ettoday-star"
     name: "ETtoday 星光云"
@@ -68,7 +126,7 @@ sources:
     enabled: true
     weight: 1.18
     tier: "A"
-    max_items: 50
+    max_items: 30
 
   - id: "soompi"
     name: "Soompi"
@@ -77,7 +135,7 @@ sources:
     enabled: true
     weight: 1.08
     tier: "A"
-    max_items: 50
+    max_items: 30
 
   - id: "vogue"
     name: "Vogue"
@@ -86,7 +144,7 @@ sources:
     enabled: true
     weight: 1.05
     tier: "A"
-    max_items: 35
+    max_items: 20
 
   - id: "hello-magazine"
     name: "HELLO!"
@@ -95,16 +153,17 @@ sources:
     enabled: true
     weight: 1.0
     tier: "A"
-    max_items: 25
+    max_items: 15
 
   - id: "mail-online-news"
     name: "Mail Online News"
     type: "rss"
     url: "https://www.dailymail.co.uk/news/index.rss"
-    enabled: true
+    enabled: false
     weight: 1.15
-    tier: "A"
-    max_items: 60
+    tier: "B"
+    max_items: 30
+    note: "综合新闻量太大，默认不进飞书；做海外社会/奇闻专题时再打开。"
 
   - id: "daily-mail-showbiz"
     name: "Daily Mail Showbiz"
@@ -113,7 +172,7 @@ sources:
     enabled: true
     weight: 1.25
     tier: "A"
-    max_items: 70
+    max_items: 35
 
   - id: "page-six"
     name: "Page Six"
@@ -122,7 +181,7 @@ sources:
     enabled: true
     weight: 1.2
     tier: "A"
-    max_items: 30
+    max_items: 20
 
   - id: "the-sun-showbiz"
     name: "The Sun Showbiz"
@@ -141,7 +200,7 @@ sources:
     enabled: true
     weight: 1.0
     tier: "B"
-    max_items: 25
+    max_items: 15
 
   - id: "guardian-world"
     name: "The Guardian World"
@@ -192,7 +251,7 @@ sources:
     weight: 0.9
     tier: "B"
     max_single_source_score_ratio: 0.7
-    max_items: 50
+    max_items: 20
 
   - id: "harpers-bazaar"
     name: "Harper's Bazaar"
@@ -201,25 +260,27 @@ sources:
     enabled: true
     weight: 0.95
     tier: "B"
-    max_items: 45
+    max_items: 20
 
   - id: "hypebae"
     name: "Hypebae"
     type: "rss"
     url: "https://hypebae.com/feed"
-    enabled: true
+    enabled: false
     weight: 0.55
     tier: "C"
-    max_items: 35
+    max_items: 20
+    note: "街头潮流/单品内容偏细，默认不进飞书；做消费审美专题时再打开。"
 
   - id: "vanity-fair"
     name: "Vanity Fair"
     type: "rss"
     url: "https://www.vanityfair.com/feed/rss"
-    enabled: true
+    enabled: false
     weight: 0.9
     tier: "B"
-    max_items: 35
+    max_items: 20
+    note: "长文和社交名流内容偏多，默认不进飞书；需要人物背景时再打开。"
 
   - id: "town-and-country"
     name: "Town & Country"
@@ -235,19 +296,21 @@ sources:
     name: "Dazed"
     type: "rss"
     url: "https://www.dazeddigital.com/rss"
-    enabled: true
+    enabled: false
     weight: 0.85
     tier: "B"
-    max_items: 25
+    max_items: 15
+    note: "青年文化/时尚偏窄，默认不进飞书；做审美趋势专题时再打开。"
 
   - id: "refinery29"
     name: "Refinery29"
     type: "rss"
     url: "https://www.refinery29.com/en-us/rss.xml"
-    enabled: true
+    enabled: false
     weight: 0.82
     tier: "B"
-    max_items: 25
+    max_items: 15
+    note: "女性生活方式源，默认关闭以减少推送量；需要关系/女性专题时再打开。"
 
   - id: "bustle"
     name: "Bustle"
@@ -256,16 +319,17 @@ sources:
     enabled: true
     weight: 0.78
     tier: "B"
-    max_items: 35
+    max_items: 20
 
   - id: "metro-uk"
     name: "Metro UK"
     type: "rss"
     url: "https://metro.co.uk/feed/"
-    enabled: true
+    enabled: false
     weight: 0.78
     tier: "B"
-    max_items: 35
+    max_items: 20
+    note: "综合源量大且混杂，默认不进飞书；做英国社会/奇闻专题时再打开。"
 
   - id: "the-sun-fabulous"
     name: "The Sun Fabulous"
@@ -284,7 +348,7 @@ sources:
     enabled: true
     weight: 0.88
     tier: "B"
-    max_items: 40
+    max_items: 20
 
   - id: "glamour"
     name: "Glamour"
@@ -293,7 +357,7 @@ sources:
     enabled: true
     weight: 0.86
     tier: "B"
-    max_items: 35
+    max_items: 20
 
   - id: "buzzfeed-latest"
     name: "BuzzFeed Latest"
@@ -445,7 +509,15 @@ sources:
     weight: 1.15
     note: "当前网络访问 People 正文、栏目页和子 sitemap 返回 402；保留为人工重点源或后续代理/第三方源接入位。"
 
-wechat_reference_accounts:
+owned_accounts:
+  - name: "insdaily"
+    positioning: "广谱海外热点、娱乐快反、英国/海外生活、可中文化的社会话题。"
+  - name: "girldaily"
+    positioning: "女性关系、情绪共鸣、审美/身材/年龄焦虑、消费生活方式。"
+  - name: "insdaily人物"
+    positioning: "明星或普通人的命运转折、人生故事、逆袭/塌房/复出/离世/病痛等人物线。"
+
+material_reference_accounts:
   - name: "槽值"
     tags: ["情绪", "社会观察", "年轻人"]
   - name: "谈心社"
@@ -479,6 +551,127 @@ wechat_reference_accounts:
   - name: "凤凰WEEKLY"
     tags: ["深度", "社会", "人物"]
 
+viral_patterns:
+  - id: "age_appearance_contrast"
+    label: "年龄/外貌反差"
+    boost: 7
+    accounts: ["insdaily", "insdaily人物", "girldaily"]
+    keywords:
+      - "岁"
+      - "year old"
+      - "-year-old"
+      - "years old"
+      - "appearance"
+      - "unrecognizable"
+      - "transformation"
+      - "weight loss"
+      - "slims down"
+      - "近照"
+      - "近况"
+      - "如今"
+      - "同框"
+      - "减肥"
+      - "暴瘦"
+      - "发福"
+      - "容颜"
+      - "身材"
+      - "换头"
+      - "怀疑人生"
+
+  - id: "relationship_turn"
+    label: "婚恋关系反转"
+    boost: 6
+    accounts: ["girldaily", "insdaily"]
+    keywords:
+      - "dating"
+      - "marriage"
+      - "divorce"
+      - "split"
+      - "engaged"
+      - "pregnant"
+      - "expecting"
+      - "feud"
+      - "rumors"
+      - "恋情"
+      - "官宣"
+      - "离婚"
+      - "再婚"
+      - "分手"
+      - "复合"
+      - "出轨"
+      - "求婚"
+      - "怀孕"
+      - "回应"
+      - "否认"
+
+  - id: "old_memory_new_story"
+    label: "旧人新事/童年记忆"
+    boost: 6
+    accounts: ["insdaily人物", "insdaily"]
+    keywords:
+      - "child star"
+      - "meme"
+      - "years later"
+      - "remember"
+      - "first time"
+      - "rare appearance"
+      - "表情包"
+      - "童星"
+      - "长大后"
+      - "当年"
+      - "终于"
+      - "首次"
+      - "罕见"
+      - "复出"
+
+  - id: "female_family_consumption"
+    label: "女性/家庭消耗"
+    boost: 6
+    accounts: ["girldaily", "insdaily人物"]
+    keywords:
+      - "mother"
+      - "mom"
+      - "daughter"
+      - "wife"
+      - "family"
+      - "abuse"
+      - "mental health"
+      - "body image"
+      - "亲妈"
+      - "母女"
+      - "女儿"
+      - "妻子"
+      - "家庭"
+      - "赚钱工具"
+      - "PUA"
+      - "娇妻"
+      - "女性"
+      - "焦虑"
+
+  - id: "public_judgement_conflict"
+    label: "全网围观/审判冲突"
+    boost: 5
+    accounts: ["insdaily", "girldaily"]
+    keywords:
+      - "backlash"
+      - "controversy"
+      - "slams"
+      - "claps back"
+      - "sparks debate"
+      - "stuns"
+      - "messy"
+      - "cryptic"
+      - "网友"
+      - "全网"
+      - "热搜"
+      - "翻车"
+      - "破防"
+      - "爆笑"
+      - "争议"
+      - "塌房"
+      - "普女"
+      - "地摊货"
+
 topic_groups:
   - id: "overseas_society"
     label: "海外社会/反常识故事"
@@ -498,6 +691,8 @@ topic_groups:
       - "court"
       - "backlash"
       - "controversy"
+      - "family drama"
+      - "human interest"
       - "viral"
       - "英国"
       - "美國"
@@ -508,7 +703,7 @@ topic_groups:
       - "移民"
       - "爭議"
       - "爆紅"
-    accounts: ["槽值", "凤凰WEEKLY", "英国那些事儿", "香港01"]
+    accounts: ["insdaily"]
     angle: "把海外事件翻译成中文读者能共情的社会情绪：规则、身份、阶层、家庭和性别。"
 
   - id: "celebrity_fashion"
@@ -536,7 +731,13 @@ topic_groups:
       - "時裝"
       - "造型"
       - "王室"
-    accounts: ["她刊", "女神汇", "英国报姐", "beebee星球"]
+      - "stuns in"
+      - "steps out"
+      - "rare appearance"
+      - "unrecognizable"
+      - "dramatic transformation"
+      - "body language"
+    accounts: ["insdaily", "girldaily"]
     angle: "优先找造型争议、身份转折、亲密关系、复出/塌房/逆袭等能做故事化包装的娱乐题。"
 
   - id: "women_relationships"
@@ -554,6 +755,12 @@ topic_groups:
       - "mental health"
       - "beauty"
       - "ageing"
+      - "body image"
+      - "pregnant"
+      - "expecting"
+      - "engaged"
+      - "splits"
+      - "feud"
       - "母親"
       - "婚姻"
       - "離婚"
@@ -564,7 +771,12 @@ topic_groups:
       - "戀愛"
       - "焦慮"
       - "女性"
-    accounts: ["她刊", "谈心社", "槽值", "最人物"]
+      - "怀孕"
+      - "求婚"
+      - "复合"
+      - "出轨"
+      - "亲妈"
+    accounts: ["girldaily"]
     angle: "从关系困境、年龄焦虑、女性处境和自我选择切入，少做单纯八卦，多做共鸣。"
 
   - id: "uk_life_study"
@@ -590,7 +802,7 @@ topic_groups:
       - "查理斯"
       - "威廉"
       - "凱特"
-    accounts: ["英国报姐", "英国那些事儿", "留学生大叔", "INSIGHT视界"]
+    accounts: ["insdaily"]
     angle: "围绕英国政策、生活成本、留学安全、王室和华人处境，做信息差与实用提醒。"
 
   - id: "people_story"
@@ -607,6 +819,11 @@ topic_groups:
       - "cancer"
       - "memoir"
       - "interview"
+      - "unrecognizable"
+      - "transformation"
+      - "rare appearance"
+      - "years later"
+      - "child star"
       - "公開"
       - "自爆"
       - "專訪"
@@ -615,7 +832,12 @@ topic_groups:
       - "患病"
       - "復出"
       - "人生"
-    accounts: ["最人物", "凤凰WEEKLY", "People", "谈心社"]
+      - "近照"
+      - "近况"
+      - "长大后"
+      - "命运"
+      - "逆袭"
+    accounts: ["insdaily人物", "insdaily"]
     angle: "把人物身上的命运拐点讲清楚：过去的标签、现在的冲突、读者为什么会在意。"
 
   - id: "consumer_lifestyle"
@@ -639,7 +861,7 @@ topic_groups:
       - "生活方式"
       - "設計"
       - "年輕人"
-    accounts: ["Vista氢商业", "三联生活实验室", "普象工业设计小站", "不相及研究所"]
+    accounts: ["girldaily", "insdaily"]
     angle: "适合做趋势观察、消费心理和生活方式变化，避免纯购物清单。"
 
   - id: "weird_internet"
@@ -661,7 +883,7 @@ topic_groups:
       - "爆紅"
       - "震驚"
       - "社交平台"
-    accounts: ["beebee星球", "那个NG", "英国那些事儿", "不相及研究所"]
+    accounts: ["insdaily"]
     angle: "优先做轻快、反差大、易截图传播的话题，但要二次核事实，避免只追猎奇。"
 
 title_signals:
@@ -674,11 +896,25 @@ title_signals:
     - "reveals"
     - "opens up"
     - "breaks silence"
+    - "addresses"
+    - "responds to"
+    - "slams"
+    - "claps back"
+    - "splits"
+    - "engaged"
+    - "pregnant"
+    - "expecting"
+    - "rare appearance"
+    - "unrecognizable"
+    - "dramatic transformation"
     - "backlash"
     - "controversy"
     - "sparks debate"
     - "viral"
     - "first time"
+    - "spotted"
+    - "PDA"
+    - "body language"
     - "公開"
     - "自爆"
     - "爭議"
@@ -686,6 +922,20 @@ title_signals:
     - "爆紅"
     - "首次"
     - "專訪"
+    - "官宣"
+    - "回应"
+    - "否认"
+    - "爆料"
+    - "惊现"
+    - "逆袭"
+    - "塌房"
+    - "复合"
+    - "分手"
+    - "合体"
+    - "约会"
+    - "怀孕"
+    - "巨变"
+    - "真相"
   weak_penalty:
     - "quiz"
     - "deals"

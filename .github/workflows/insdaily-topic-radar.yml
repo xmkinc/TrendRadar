@@ -2,10 +2,16 @@ name: insdaily Topic Radar
 
 on:
   schedule:
-    # Beijing time 09:10 and 16:10
+    # daily mode: Beijing time 09:10 and 16:10
     - cron: "10 1,8 * * *"
+    # weekly mode: Beijing time Monday 10:30
+    - cron: "30 2 * * 1"
   workflow_dispatch:
     inputs:
+      mode:
+        description: "Report mode: daily or weekly"
+        required: false
+        default: "daily"
       runner:
         description: "Runner label for manual runs"
         required: false
@@ -37,11 +43,16 @@ jobs:
       - name: Run insdaily topic radar
         env:
           FEISHU_WEBHOOK_URL: ${{ secrets.FEISHU_WEBHOOK_URL }}
-        run: uv run python scripts/insdaily_topic_radar.py --push
+        run: |
+          MODE="${{ github.event.inputs.mode || 'daily' }}"
+          if [ "${{ github.event_name }}" = "schedule" ] && [ "${{ github.event.schedule }}" = "30 2 * * 1" ]; then
+            MODE="weekly"
+          fi
+          uv run python scripts/insdaily_topic_radar.py --mode "$MODE" --push
 
       - name: Upload report artifact
         uses: actions/upload-artifact@v4
         with:
-          name: insdaily-topic-radar-report
+          name: insdaily-topic-radar-report-${{ github.event.inputs.mode || 'scheduled' }}
           path: output/insdaily/**/*.md
           if-no-files-found: warn

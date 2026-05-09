@@ -58,13 +58,40 @@ uv run python scripts/insdaily_topic_radar.py --push
 
 People、The Cut、W Magazine、Kstyle、三立娱乐、中时娱乐、Google Trends、TikTok Creative Center、Pinterest Trends、Reddit 关系类社区等已保留在配置里，但当前没有稳定公开 RSS，或网络访问容易被拦，所以先禁用。后续可以通过代理、内部浏览器、付费监测服务、第三方 RSS、Reddit API 或专门抓取器再接入。
 
-微信公号源无法像 RSS 一样公开抓取，所以暂时作为“中文表达和角度参考源”进入选题库：
+你们自己的账号矩阵会作为最终承接账号进入报告：
+
+- `insdaily`：广谱海外热点、娱乐快反、英国/海外生活、可中文化的社会话题。
+- `girldaily`：女性关系、情绪共鸣、审美/身材/年龄焦虑、消费生活方式。
+- `insdaily人物`：明星或普通人的命运转折、人生故事、逆袭/塌房/复出/离世/病痛等人物线。
+
+下面这些公众号不再作为“对标账号”输出，只作为素材源、网感源和中文表达参考：
 
 槽值、谈心社、她刊、最人物、英国报姐、英国那些事儿、INSIGHT视界、留学生大叔、Vista氢商业、三联生活实验室、普象工业设计小站、不相及研究所、beebee星球、那个NG、女神汇、凤凰WEEKLY。
 
+## 推送节奏
+
+现在分两种模式：
+
+- `daily`：新闻时效选题，每天/每天两次推送，飞书只发最值得当天看的短单。
+- `weekly`：专题选题池，每周一次，适合周会讨论、人物长文、女性议题、消费审美和海外生活专题。
+
 ## 选题库方向
 
-脚本会按这些方向给素材打分：
+根据你发的 2023 年原创爆文库，80 条有效爆文里，主要结构是：
+
+- 类型上：娱乐 31 条、人物 28 条、资讯 15 条、人文 6 条。核心不是硬新闻，而是“人物娱乐 + 女性情绪 + 可中文化的海外故事”。
+- 阅读最高的钩子集中在：年龄/外貌反差、身材颜值变化、婚恋关系反转、童年记忆/旧人新事、公众审判式争议。
+- 标题常见结构是“强人物标签 + 数字/反差 + 情绪判断 + 悬念追问”，例如近照、长大后、减肥、离婚、翻车、网友、全网、到底经历了什么。
+
+所以雷达会先按内容方向匹配，再额外套一层“爆文库模型”加分：
+
+- 年龄/外貌反差：适合 `insdaily` 和 `insdaily人物`
+- 婚恋关系反转：适合 `girldaily` 和 `insdaily`
+- 旧人新事/童年记忆：适合 `insdaily人物`
+- 女性/家庭消耗：适合 `girldaily` 和 `insdaily人物`
+- 全网围观/审判冲突：适合 `insdaily` 和 `girldaily`
+
+基础内容方向仍保留这些：
 
 - 海外社会/反常识故事
 - 明星娱乐/红毯时尚
@@ -79,23 +106,26 @@ People、The Cut、W Magazine、Kstyle、三立娱乐、中时娱乐、Google Tr
 - 选题方向
 - 来源、时间、链接
 - 推荐角度
-- 对标参考公众号
+- 建议账号：`insdaily`、`girldaily` 或 `insdaily人物`
 - 命中关键词和分数依据
 - 备选标题
 
 ## 可以给你们的 4 种打法
 
 1. 快反流量款  
-   用 E!、Us Weekly、ETtoday、Page Six、Daily Mail、TMZ、HK01 娱乐和韩娱源做短平快。适合当天要发、要轻、要抓眼。
+   用 E!、Us Weekly、ETtoday、Page Six、Daily Mail、TMZ、HK01 娱乐和韩娱源做短平快。优先找全网围观、明星关系、造型翻车、争议回应。
 
 2. 女性共鸣款  
-   用 Bustle、Refinery29、Cosmopolitan、Glamour、关系、婚恋、年龄焦虑、家庭冲突、人物处境做中长文。适合她刊、谈心社、槽值式包装。
+   用 Bustle、Refinery29、Cosmopolitan、Glamour、关系、婚恋、年龄焦虑、家庭冲突、人物处境做中长文。更贴近 `girldaily`：不是单纯八卦，而是“她为什么会被消耗/被审判/被理解”。
 
 3. 英国/留学信息差  
    用 Mail Online、Metro UK、HK01 的英国政策、留学、王室和海外生活素材，做“中文圈不知道但很该知道”的题。
 
 4. 消费生活观察  
    用 Vogue、Harper's Bazaar、Hypebae、Dazed、Cosmopolitan、Glamour、香港01生活类内容，做年轻人消费、审美和生活方式变化。
+
+5. 人物命运转折
+   用 People、Daily Mail、HELLO!、HK01、ET、Soompi/Koreaboo 等人物材料，找“昔日标签 + 今日变化 + 命运拐点”。更贴近 `insdaily人物`：旧人新事、童星长大、复出、病痛、离世、翻红、塌房、逆袭。
 
 ## 调整方法
 
