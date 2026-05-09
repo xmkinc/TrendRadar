@@ -1,0 +1,713 @@
+# insdaily topic radar configuration
+#
+# This file turns the TrendRadar handoff into an editorial topic radar for
+# insdaily-style WeChat articles: overseas news, celebrity/fashion, women,
+# relationships, UK/living-abroad, people stories, and consumer/lifestyle.
+
+app:
+  timezone: "Asia/Shanghai"
+  freshness_days: 3
+  max_items_per_source: 60
+  top_n: 24
+  max_per_topic: 4
+  output_dir: "output/insdaily"
+
+sources:
+  # A 档：每天优先看的主源。更贴近 insdaily 的爆文盘：人物、明星、
+  # 女性情绪、海外社会、港台日韩娱乐与可转述的热议事件。
+  - id: "hk01-news-sitemap"
+    name: "香港01 新闻 sitemap"
+    type: "sitemap"
+    url: "https://www.hk01.com/sitemap.xml"
+    enabled: true
+    weight: 1.25
+    tier: "A"
+    max_items: 100
+    include_categories:
+      - "即時國際"
+      - "熱爆話題"
+      - "人氣話題"
+      - "即時娛樂"
+      - "人氣娛樂"
+      - "即時中國"
+      - "世界專題"
+      - "01專欄"
+      - "旅遊"
+
+  - id: "eonline-top-stories"
+    name: "E! News Top Stories"
+    type: "rss"
+    url: "https://www.eonline.com/syndication/feeds/rssfeeds/topstories.xml"
+    enabled: true
+    weight: 1.25
+    tier: "A"
+    max_items: 40
+
+  - id: "us-weekly"
+    name: "Us Weekly"
+    type: "rss"
+    url: "https://www.usmagazine.com/feed/"
+    enabled: true
+    weight: 1.22
+    tier: "A"
+    max_items: 35
+
+  - id: "entertainment-tonight"
+    name: "Entertainment Tonight"
+    type: "rss"
+    url: "https://www.etonline.com/news/rss"
+    enabled: true
+    weight: 1.15
+    tier: "A"
+    max_items: 30
+
+  - id: "ettoday-star"
+    name: "ETtoday 星光云"
+    type: "rss"
+    url: "https://feeds.feedburner.com/ettoday/star"
+    enabled: true
+    weight: 1.18
+    tier: "A"
+    max_items: 50
+
+  - id: "soompi"
+    name: "Soompi"
+    type: "rss"
+    url: "https://www.soompi.com/feed"
+    enabled: true
+    weight: 1.08
+    tier: "A"
+    max_items: 50
+
+  - id: "vogue"
+    name: "Vogue"
+    type: "rss"
+    url: "https://www.vogue.com/feed/rss"
+    enabled: true
+    weight: 1.05
+    tier: "A"
+    max_items: 35
+
+  - id: "hello-magazine"
+    name: "HELLO!"
+    type: "rss"
+    url: "https://www.hellomagazine.com/rss.xml"
+    enabled: true
+    weight: 1.0
+    tier: "A"
+    max_items: 25
+
+  - id: "mail-online-news"
+    name: "Mail Online News"
+    type: "rss"
+    url: "https://www.dailymail.co.uk/news/index.rss"
+    enabled: true
+    weight: 1.15
+    tier: "A"
+    max_items: 60
+
+  - id: "daily-mail-showbiz"
+    name: "Daily Mail Showbiz"
+    type: "rss"
+    url: "https://www.dailymail.co.uk/tvshowbiz/index.rss"
+    enabled: true
+    weight: 1.25
+    tier: "A"
+    max_items: 70
+
+  - id: "page-six"
+    name: "Page Six"
+    type: "rss"
+    url: "https://pagesix.com/feed/"
+    enabled: true
+    weight: 1.2
+    tier: "A"
+    max_items: 30
+
+  - id: "the-sun-showbiz"
+    name: "The Sun Showbiz"
+    type: "rss"
+    url: "https://www.thesun.co.uk/tvandshowbiz/feed/"
+    enabled: false
+    weight: 1.05
+    tier: "A"
+    max_items: 35
+    note: "本地验证偶发返回 0 条，先作为待接入源，后续可用代理或第三方 RSS 稳定后打开。"
+
+  - id: "koreaboo"
+    name: "Koreaboo"
+    type: "rss"
+    url: "https://www.koreaboo.com/feed/"
+    enabled: true
+    weight: 1.0
+    tier: "B"
+    max_items: 25
+
+  - id: "guardian-world"
+    name: "The Guardian World"
+    type: "rss"
+    url: "https://www.theguardian.com/world/rss"
+    enabled: false
+    weight: 0.55
+    tier: "D"
+    max_items: 50
+    note: "硬新闻噪声偏高，按评审意见降为事实核验/背景源；默认不进入每日候选。"
+
+  - id: "guardian-fashion"
+    name: "The Guardian Fashion"
+    type: "rss"
+    url: "https://www.theguardian.com/fashion/rss"
+    enabled: false
+    weight: 0.55
+    tier: "D"
+    max_items: 40
+    note: "时尚分析偏重，默认不作为选题候选；有红毯热议时可人工打开。"
+
+  - id: "nytimes-world"
+    name: "The New York Times World"
+    type: "rss"
+    url: "https://rss.nytimes.com/services/xml/rss/nyt/World.xml"
+    enabled: false
+    weight: 0.55
+    tier: "D"
+    max_items: 50
+    note: "硬新闻噪声偏高，按评审意见降为事实核验/背景源；默认不进入每日候选。"
+
+  - id: "nytimes-style"
+    name: "The New York Times Style"
+    type: "rss"
+    url: "https://rss.nytimes.com/services/xml/rss/nyt/FashionandStyle.xml"
+    enabled: false
+    weight: 0.6
+    tier: "D"
+    max_items: 50
+    note: "长文/分析较多，默认不作为日常候选；需要高质量背景时可打开。"
+
+  # B 档：流量嗅觉强，但需要二次确认事实或更适合作为角度源。
+  - id: "tmz-all"
+    name: "TMZ"
+    type: "rss"
+    url: "https://www.tmz.com/rss.xml"
+    enabled: true
+    weight: 0.9
+    tier: "B"
+    max_single_source_score_ratio: 0.7
+    max_items: 50
+
+  - id: "harpers-bazaar"
+    name: "Harper's Bazaar"
+    type: "rss"
+    url: "https://www.harpersbazaar.com/rss/all.xml"
+    enabled: true
+    weight: 0.95
+    tier: "B"
+    max_items: 45
+
+  - id: "hypebae"
+    name: "Hypebae"
+    type: "rss"
+    url: "https://hypebae.com/feed"
+    enabled: true
+    weight: 0.55
+    tier: "C"
+    max_items: 35
+
+  - id: "vanity-fair"
+    name: "Vanity Fair"
+    type: "rss"
+    url: "https://www.vanityfair.com/feed/rss"
+    enabled: true
+    weight: 0.9
+    tier: "B"
+    max_items: 35
+
+  - id: "town-and-country"
+    name: "Town & Country"
+    type: "rss"
+    url: "https://www.townandcountrymag.com/rss/all.xml"
+    enabled: false
+    weight: 0.55
+    tier: "D"
+    max_items: 35
+    note: "old-money 社交内容偏窄，默认关闭；王室或名人故事可人工打开。"
+
+  - id: "dazed"
+    name: "Dazed"
+    type: "rss"
+    url: "https://www.dazeddigital.com/rss"
+    enabled: true
+    weight: 0.85
+    tier: "B"
+    max_items: 25
+
+  - id: "refinery29"
+    name: "Refinery29"
+    type: "rss"
+    url: "https://www.refinery29.com/en-us/rss.xml"
+    enabled: true
+    weight: 0.82
+    tier: "B"
+    max_items: 25
+
+  - id: "bustle"
+    name: "Bustle"
+    type: "rss"
+    url: "https://www.bustle.com/rss"
+    enabled: true
+    weight: 0.78
+    tier: "B"
+    max_items: 35
+
+  - id: "metro-uk"
+    name: "Metro UK"
+    type: "rss"
+    url: "https://metro.co.uk/feed/"
+    enabled: true
+    weight: 0.78
+    tier: "B"
+    max_items: 35
+
+  - id: "the-sun-fabulous"
+    name: "The Sun Fabulous"
+    type: "rss"
+    url: "https://www.thesun.co.uk/fabulous/feed/"
+    enabled: false
+    weight: 0.72
+    tier: "B"
+    max_items: 30
+    note: "本地验证偶发返回 0 条，先作为待接入源。"
+
+  - id: "cosmopolitan"
+    name: "Cosmopolitan"
+    type: "rss"
+    url: "https://www.cosmopolitan.com/rss/all.xml"
+    enabled: true
+    weight: 0.88
+    tier: "B"
+    max_items: 40
+
+  - id: "glamour"
+    name: "Glamour"
+    type: "rss"
+    url: "https://www.glamour.com/feed/rss"
+    enabled: true
+    weight: 0.86
+    tier: "B"
+    max_items: 35
+
+  - id: "buzzfeed-latest"
+    name: "BuzzFeed Latest"
+    type: "rss"
+    url: "https://www.buzzfeed.com/index.xml"
+    enabled: false
+    weight: 0.45
+    tier: "C"
+    max_items: 50
+    note: "评审认为噪声和 listicle 比例偏高，先关闭；需要网感奇闻时可人工打开。"
+
+  - id: "buzzfeed-world"
+    name: "BuzzFeed World"
+    type: "rss"
+    url: "https://www.buzzfeed.com/world.xml"
+    enabled: false
+    weight: 0.45
+    tier: "C"
+    max_items: 40
+    note: "评审认为噪声和 listicle 比例偏高，先关闭；需要网感奇闻时可人工打开。"
+
+  # C 档：社媒热议信号。适合帮编辑判断“是不是已经有人在讨论”，
+  # 不适合单独作为事实依据。
+  - id: "reddit-popculturechat"
+    name: "Reddit PopCultureChat"
+    type: "rss"
+    url: "https://www.reddit.com/r/popculturechat/.rss"
+    enabled: false
+    weight: 0.68
+    tier: "C"
+    max_single_source_score_ratio: 0.4
+    max_items: 25
+    note: "社媒热议信号源；当前本地抓取偶发 403，先关闭，后续用代理/第三方 RSS 或 Reddit API 接入。"
+
+  - id: "reddit-fauxmoi"
+    name: "Reddit Fauxmoi"
+    type: "rss"
+    url: "https://www.reddit.com/r/Fauxmoi/.rss"
+    enabled: false
+    weight: 0.62
+    tier: "C"
+    max_single_source_score_ratio: 0.4
+    max_items: 25
+    note: "社媒热议信号源；当前本地抓取偶发 403，先关闭，后续用代理/第三方 RSS 或 Reddit API 接入。"
+
+  - id: "reddit-relationships"
+    name: "Reddit Relationships"
+    type: "rss"
+    url: "https://www.reddit.com/r/relationships/.rss"
+    enabled: false
+    weight: 0.5
+    tier: "C"
+    max_single_source_score_ratio: 0.4
+    max_items: 25
+    note: "情感故事信号源；当前本地抓取偶发 403，先关闭，后续用代理/第三方 RSS 或 Reddit API 接入。"
+
+  - id: "reddit-aita"
+    name: "Reddit AmItheAsshole"
+    type: "rss"
+    url: "https://www.reddit.com/r/AmItheAsshole/.rss"
+    enabled: false
+    weight: 0.48
+    tier: "C"
+    max_single_source_score_ratio: 0.4
+    max_items: 25
+    note: "情感争议信号源；当前本地抓取偶发 403，先关闭，后续用代理/第三方 RSS 或 Reddit API 接入。"
+
+  - id: "reddit-twox"
+    name: "Reddit TwoXChromosomes"
+    type: "rss"
+    url: "https://www.reddit.com/r/TwoXChromosomes/.rss"
+    enabled: false
+    weight: 0.48
+    tier: "C"
+    max_single_source_score_ratio: 0.4
+    max_items: 25
+    note: "女性议题信号源；当前本地抓取偶发 403，先关闭，后续用代理/第三方 RSS 或 Reddit API 接入。"
+
+  # 备选/人工源：有价值，但当前没有稳定公开 RSS，或网络访问容易被拦。
+  - id: "the-cut-manual"
+    name: "The Cut"
+    type: "manual"
+    url: "https://www.thecut.com/"
+    enabled: false
+    weight: 0.95
+    note: "女性、关系、名人文化很适合 insdaily；当前公开 RSS 验证不稳定，先保留为人工重点源。"
+
+  - id: "w-magazine-manual"
+    name: "W Magazine"
+    type: "manual"
+    url: "https://www.wmagazine.com/"
+    enabled: false
+    weight: 0.9
+    note: "时尚人物和红毯源，当前公开 RSS 返回 404；后续可接 sitemap/第三方 RSS。"
+
+  - id: "kstyle-manual"
+    name: "Kstyle"
+    type: "manual"
+    url: "https://kstyle.com/"
+    enabled: false
+    weight: 0.9
+    note: "日韩娱乐源，当前公开 RSS/sitemap 不稳定；Soompi 先承担韩娱自动监控。"
+
+  - id: "sanlih-manual"
+    name: "三立新闻网 娱乐星闻"
+    type: "manual"
+    url: "https://www.setn.com/News.aspx?PageGroupID=8"
+    enabled: false
+    weight: 0.88
+    note: "港台娱乐补充源，当前 RSS 入口未验证成功，先作为人工/后续 HTML 抓取源。"
+
+  - id: "chinatimes-star-manual"
+    name: "中时新闻网 娱乐"
+    type: "manual"
+    url: "https://www.chinatimes.com/star/"
+    enabled: false
+    weight: 0.85
+    note: "港台娱乐补充源，当前公开 RSS/sitemap 未验证成功。"
+
+  - id: "google-trends-manual"
+    name: "Google Trends"
+    type: "manual"
+    url: "https://trends.google.com/"
+    enabled: false
+    weight: 0.8
+    note: "用于人工核对搜索热度；当前 RSS 入口在本网络返回 404，暂不自动抓。"
+
+  - id: "tiktok-creative-center-manual"
+    name: "TikTok Creative Center"
+    type: "manual"
+    url: "https://ads.tiktok.com/business/creativecenter/"
+    enabled: false
+    weight: 0.8
+    note: "适合判断短视频热词和海外平台内容势能；后续可单独接专门抓取器。"
+
+  - id: "pinterest-trends-manual"
+    name: "Pinterest Trends"
+    type: "manual"
+    url: "https://trends.pinterest.com/"
+    enabled: false
+    weight: 0.75
+    note: "适合生活方式、审美、穿搭趋势人工核对。"
+
+  - id: "people-manual"
+    name: "People"
+    type: "manual"
+    url: "https://people.com/"
+    enabled: false
+    weight: 1.15
+    note: "当前网络访问 People 正文、栏目页和子 sitemap 返回 402；保留为人工重点源或后续代理/第三方源接入位。"
+
+wechat_reference_accounts:
+  - name: "槽值"
+    tags: ["情绪", "社会观察", "年轻人"]
+  - name: "谈心社"
+    tags: ["情感", "心理", "关系"]
+  - name: "她刊"
+    tags: ["女性", "成长", "关系"]
+  - name: "最人物"
+    tags: ["人物", "故事"]
+  - name: "英国报姐"
+    tags: ["英国", "王室", "海外生活", "娱乐"]
+  - name: "英国那些事儿"
+    tags: ["英国", "海外奇闻", "国际热点"]
+  - name: "INSIGHT视界"
+    tags: ["留学", "国际教育", "海外生活"]
+  - name: "留学生大叔"
+    tags: ["留学", "英国", "海外华人"]
+  - name: "Vista氢商业"
+    tags: ["商业", "消费", "品牌"]
+  - name: "三联生活实验室"
+    tags: ["生活方式", "文化", "消费"]
+  - name: "普象工业设计小站"
+    tags: ["设计", "产品", "生活方式"]
+  - name: "不相及研究所"
+    tags: ["泛文化", "冷门", "趣味"]
+  - name: "beebee星球"
+    tags: ["海外趣闻", "网感", "年轻人"]
+  - name: "那个NG"
+    tags: ["年轻人", "娱乐", "网感"]
+  - name: "女神汇"
+    tags: ["女性", "明星", "审美"]
+  - name: "凤凰WEEKLY"
+    tags: ["深度", "社会", "人物"]
+
+topic_groups:
+  - id: "overseas_society"
+    label: "海外社会/反常识故事"
+    priority: 1
+    keywords:
+      - "woman"
+      - "women"
+      - "mother"
+      - "family"
+      - "school"
+      - "student"
+      - "teacher"
+      - "immigration"
+      - "housing"
+      - "crime"
+      - "trial"
+      - "court"
+      - "backlash"
+      - "controversy"
+      - "viral"
+      - "英国"
+      - "美國"
+      - "女子"
+      - "媽媽"
+      - "家庭"
+      - "學校"
+      - "移民"
+      - "爭議"
+      - "爆紅"
+    accounts: ["槽值", "凤凰WEEKLY", "英国那些事儿", "香港01"]
+    angle: "把海外事件翻译成中文读者能共情的社会情绪：规则、身份、阶层、家庭和性别。"
+
+  - id: "celebrity_fashion"
+    label: "明星娱乐/红毯时尚"
+    priority: 2
+    keywords:
+      - "celebrity"
+      - "star"
+      - "actor"
+      - "actress"
+      - "singer"
+      - "red carpet"
+      - "fashion"
+      - "style"
+      - "dress"
+      - "outfit"
+      - "Met Gala"
+      - "royal"
+      - "明星"
+      - "女星"
+      - "影帝"
+      - "視帝"
+      - "紅毯"
+      - "穿搭"
+      - "時裝"
+      - "造型"
+      - "王室"
+    accounts: ["她刊", "女神汇", "英国报姐", "beebee星球"]
+    angle: "优先找造型争议、身份转折、亲密关系、复出/塌房/逆袭等能做故事化包装的娱乐题。"
+
+  - id: "women_relationships"
+    label: "女性/亲密关系/情绪"
+    priority: 3
+    keywords:
+      - "dating"
+      - "marriage"
+      - "divorce"
+      - "husband"
+      - "wife"
+      - "boyfriend"
+      - "girlfriend"
+      - "relationship"
+      - "mental health"
+      - "beauty"
+      - "ageing"
+      - "母親"
+      - "婚姻"
+      - "離婚"
+      - "丈夫"
+      - "妻子"
+      - "男友"
+      - "女友"
+      - "戀愛"
+      - "焦慮"
+      - "女性"
+    accounts: ["她刊", "谈心社", "槽值", "最人物"]
+    angle: "从关系困境、年龄焦虑、女性处境和自我选择切入，少做单纯八卦，多做共鸣。"
+
+  - id: "uk_life_study"
+    label: "英国/留学/海外生活"
+    priority: 4
+    keywords:
+      - "UK"
+      - "Britain"
+      - "British"
+      - "London"
+      - "student visa"
+      - "university"
+      - "study abroad"
+      - "King Charles"
+      - "Prince William"
+      - "Kate Middleton"
+      - "英国"
+      - "倫敦"
+      - "留學"
+      - "大學"
+      - "簽證"
+      - "王室"
+      - "查理斯"
+      - "威廉"
+      - "凱特"
+    accounts: ["英国报姐", "英国那些事儿", "留学生大叔", "INSIGHT视界"]
+    angle: "围绕英国政策、生活成本、留学安全、王室和华人处境，做信息差与实用提醒。"
+
+  - id: "people_story"
+    label: "人物故事/命运转折"
+    priority: 5
+    keywords:
+      - "reveals"
+      - "opens up"
+      - "breaks silence"
+      - "dies"
+      - "death"
+      - "survivor"
+      - "diagnosed"
+      - "cancer"
+      - "memoir"
+      - "interview"
+      - "公開"
+      - "自爆"
+      - "專訪"
+      - "去世"
+      - "癌症"
+      - "患病"
+      - "復出"
+      - "人生"
+    accounts: ["最人物", "凤凰WEEKLY", "People", "谈心社"]
+    angle: "把人物身上的命运拐点讲清楚：过去的标签、现在的冲突、读者为什么会在意。"
+
+  - id: "consumer_lifestyle"
+    label: "消费/生活方式/产品"
+    priority: 6
+    keywords:
+      - "shopping"
+      - "brand"
+      - "trend"
+      - "home"
+      - "travel"
+      - "hotel"
+      - "TikTok"
+      - "Gen Z"
+      - "cost of living"
+      - "consumer"
+      - "品牌"
+      - "消費"
+      - "旅遊"
+      - "酒店"
+      - "生活方式"
+      - "設計"
+      - "年輕人"
+    accounts: ["Vista氢商业", "三联生活实验室", "普象工业设计小站", "不相及研究所"]
+    angle: "适合做趋势观察、消费心理和生活方式变化，避免纯购物清单。"
+
+  - id: "weird_internet"
+    label: "网感奇闻/社媒话题"
+    priority: 7
+    keywords:
+      - "viral"
+      - "TikTok"
+      - "Reddit"
+      - "internet"
+      - "meme"
+      - "bizarre"
+      - "weird"
+      - "shocked"
+      - "sparks debate"
+      - "網民"
+      - "熱議"
+      - "奇葩"
+      - "爆紅"
+      - "震驚"
+      - "社交平台"
+    accounts: ["beebee星球", "那个NG", "英国那些事儿", "不相及研究所"]
+    angle: "优先做轻快、反差大、易截图传播的话题，但要二次核事实，避免只追猎奇。"
+
+title_signals:
+  exclude:
+    - "AV女優"
+    - "adult film"
+    - "porn"
+    - "NSFW"
+  strong:
+    - "reveals"
+    - "opens up"
+    - "breaks silence"
+    - "backlash"
+    - "controversy"
+    - "sparks debate"
+    - "viral"
+    - "first time"
+    - "公開"
+    - "自爆"
+    - "爭議"
+    - "熱議"
+    - "爆紅"
+    - "首次"
+    - "專訪"
+  weak_penalty:
+    - "quiz"
+    - "deals"
+    - "products"
+    - "sale"
+    - "coupon"
+    - "recap"
+    - "live updates"
+    - "測驗"
+    - "優惠"
+    - "購物清單"
+
+strategy_options:
+  - name: "快反流量款"
+    use_when: "当天 TMZ、BuzzFeed、HK01 娱乐或社媒奇闻明显有爆点。"
+    output: "1篇短平快，标题强情绪，正文 800-1200 字。"
+  - name: "女性共鸣款"
+    use_when: "人物、关系、年龄、婚恋、家庭冲突能映射中文读者处境。"
+    output: "1篇中长文，故事先行，观点收束，适合她刊/谈心社式表达。"
+  - name: "英国/留学信息差"
+    use_when: "Guardian/HK01/NYT 出现英国政策、大学、签证、王室或海外华人议题。"
+    output: "1篇信息差文章，先讲变化，再讲对留学生/华人/普通人的影响。"
+  - name: "消费生活观察"
+    use_when: "NYT Style、Guardian Fashion、BuzzFeed、HK01 生活类话题出现共同指向。"
+    output: "1篇趋势稿，讲年轻人审美、消费心理或生活方式变化。"
