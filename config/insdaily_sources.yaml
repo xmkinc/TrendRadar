@@ -70,6 +70,70 @@ app:
         - "uk_life_study"
         - "overseas_society"
 
+score_model:
+  name: "insdaily_khazix_v1"
+  description: "拆分式选题评分：信源、选题贴合、爆文结构、传播信号、时效、标题形态加分，风险和弱选题扣分。"
+  source_tier_points:
+    A: 13
+    B: 9
+    C: 5
+    D: 2
+  source_weight_multiplier: 2
+  source_max: 16
+  topic_keyword_points: 3
+  topic_keyword_max: 9
+  viral_pattern_max: 24
+  strong_signal_points: 3
+  strong_signal_max: 12
+  story_shape:
+    max: 8
+    number: 2
+    contrast: 2
+    question: 1.5
+    public_judgement: 1.5
+    punctuation: 1
+
+risk_signals:
+  hard:
+    penalty: 35
+    keywords:
+      - "Xi Jinping"
+      - "CCP"
+      - "Tibet"
+      - "Xinjiang"
+      - "Taiwan independence"
+      - "六四"
+      - "习近平"
+      - "中共"
+      - "台独"
+      - "新疆"
+      - "西藏"
+      - "自杀方法"
+      - "suicide method"
+  soft:
+    penalty: 12
+    keywords:
+      - "alleged"
+      - "accused"
+      - "lawsuit"
+      - "court"
+      - "trial"
+      - "minor"
+      - "teen"
+      - "death"
+      - "dies"
+      - "health"
+      - "weight loss drug"
+      - "指控"
+      - "涉嫌"
+      - "法院"
+      - "官司"
+      - "未成年"
+      - "去世"
+      - "死亡"
+      - "病情"
+      - "减肥药"
+
 sources:
   # A 档：每天优先看的主源。更贴近 insdaily 的爆文盘：人物、明星、
   # 女性情绪、海外社会、港台日韩娱乐与可转述的热议事件。

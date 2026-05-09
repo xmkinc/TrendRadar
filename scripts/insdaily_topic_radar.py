@@ -56,6 +56,7 @@ class SourceItem:
     angle: str = ""
     accounts: List[str] = field(default_factory=list)
     matched_keywords: List[str] = field(default_factory=list)
+    score_breakdown: Dict[str, float] = field(default_factory=dict)
     score_notes: List[str] = field(default_factory=list)
 
 
@@ -319,13 +320,73 @@ def recency_score(published_at: str, now: datetime, freshness_days: int) -> Tupl
     return -4.0, f"超过{freshness_days}天"
 
 
+def clamp(value: float, minimum: float, maximum: float) -> float:
+    return max(minimum, min(maximum, value))
+
+
+def source_score(source: Dict[str, Any], score_model: Dict[str, Any]) -> Tuple[float, str]:
+    tier = str(source.get("tier", "C")).upper()
+    tier_points = score_model.get("source_tier_points", {})
+    base = float(tier_points.get(tier, tier_points.get("C", 6)))
+    weight_multiplier = float(score_model.get("source_weight_multiplier", 2.0))
+    max_points = float(score_model.get("source_max", 16))
+    score = clamp(base + float(source.get("weight", 1.0)) * weight_multiplier, 0, max_points)
+    return score, f"信源{tier}档 {score:.1f}"
+
+
+def topic_match_score(group: Dict[str, Any], hits: List[str], score_model: Dict[str, Any]) -> float:
+    priority = int(group.get("priority", 9))
+    base = max(4.0, 20.0 - priority * 2.0)
+    keyword_points = float(score_model.get("topic_keyword_points", 3.0))
+    keyword_max = float(score_model.get("topic_keyword_max", 9.0))
+    return base + min(keyword_max, len(set(hits)) * keyword_points)
+
+
+def story_shape_score(title: str, score_model: Dict[str, Any]) -> Tuple[float, List[str]]:
+    shape = score_model.get("story_shape", {})
+    max_points = float(shape.get("max", 8))
+    score = 0.0
+    notes: List[str] = []
+
+    checks = [
+        ("数字/年龄", r"\d+|[一二三四五六七八九十百千万亿]+", float(shape.get("number", 2))),
+        ("强反差", r"从.+到|却|竟|居然|没想到|unrecognizable|transformation|before|after", float(shape.get("contrast", 2))),
+        ("悬念追问", r"为什么|到底|怎么|what happened|why|how", float(shape.get("question", 1.5))),
+        ("公众围观", r"网友|全网|热搜|viral|backlash|sparks debate", float(shape.get("public_judgement", 1.5))),
+        ("强情绪标点", r"[？！…]|\\.\\.\\.", float(shape.get("punctuation", 1))),
+    ]
+    for label, pattern, points in checks:
+        if re.search(pattern, title, flags=re.IGNORECASE):
+            score += points
+            notes.append(label)
+
+    return clamp(score, 0, max_points), notes
+
+
+def risk_penalty(title: str, config: Dict[str, Any]) -> Tuple[float, List[str]]:
+    risk_config = config.get("risk_signals", {})
+    total = 0.0
+    notes: List[str] = []
+    for level in ("hard", "soft"):
+        group = risk_config.get(level, {})
+        hits = keyword_hits(title, group.get("keywords", []))
+        if not hits:
+            continue
+        penalty = float(group.get("penalty", 0))
+        total += penalty
+        label = "高风险" if level == "hard" else "需复核"
+        notes.append(f"{label}：{', '.join(hits[:3])}")
+    return total, notes
+
+
 def score_items(items: List[SourceItem], config: Dict[str, Any], mode: str = "daily") -> List[SourceItem]:
-    source_weights = {s["id"]: float(s.get("weight", 1.0)) for s in config.get("sources", [])}
+    sources_by_id = {s["id"]: s for s in config.get("sources", [])}
     topic_groups = config.get("topic_groups", [])
     viral_patterns = config.get("viral_patterns", [])
     exclude_signals = config.get("title_signals", {}).get("exclude", [])
     strong_signals = config.get("title_signals", {}).get("strong", [])
     weak_penalties = config.get("title_signals", {}).get("weak_penalty", [])
+    score_model = config.get("score_model", {})
     app = report_config(config, mode)
     now = configured_now(app.get("timezone", "Asia/Shanghai"))
     freshness_days = int(app.get("freshness_days", 3))
@@ -346,8 +407,7 @@ def score_items(items: List[SourceItem], config: Dict[str, Any], mode: str = "da
                 hits.extend(keyword_hits(item.category, group.get("keywords", [])))
             if not hits:
                 continue
-            priority = int(group.get("priority", 9))
-            group_score = max(2.0, 18.0 - priority * 1.8) + min(12.0, len(set(hits)) * 3.0)
+            group_score = topic_match_score(group, hits, score_model)
             if best is None or group_score > best["group_score"]:
                 best = {**group, "group_score": group_score}
                 best_hits = sorted(set(hits), key=hits.index)
@@ -355,42 +415,73 @@ def score_items(items: List[SourceItem], config: Dict[str, Any], mode: str = "da
         if best is None:
             continue
 
-        score = source_weights.get(item.source_id, 1.0) * 10.0 + float(best["group_score"])
+        breakdown: Dict[str, float] = {}
         notes = [f"匹配：{', '.join(best_hits[:5])}"]
 
+        src_score, src_note = source_score(sources_by_id.get(item.source_id, {}), score_model)
+        breakdown["信源"] = round(src_score, 1)
+        notes.append(src_note)
+
+        topic_score = float(best["group_score"])
+        breakdown["选题贴合"] = round(topic_score, 1)
+
         rec_score, rec_note = recency_score(item.published_at, now, freshness_days)
-        score += rec_score
+        breakdown["时效"] = round(rec_score, 1)
         notes.append(rec_note)
 
         strong_hits = keyword_hits(title, strong_signals)
+        signal_score = 0.0
         if strong_hits:
-            score += min(10.0, 2.5 * len(strong_hits))
+            signal_score = min(
+                float(score_model.get("strong_signal_max", 12)),
+                float(score_model.get("strong_signal_points", 3)) * len(strong_hits),
+            )
             notes.append(f"强信号：{', '.join(strong_hits[:3])}")
+        breakdown["传播信号"] = round(signal_score, 1)
 
         pattern_accounts: List[str] = []
         pattern_hits: List[str] = []
+        pattern_score = 0.0
         for pattern in viral_patterns:
             hits = keyword_hits(title, pattern.get("keywords", []))
             if not hits:
                 continue
-            score += float(pattern.get("boost", 0))
+            pattern_score += float(pattern.get("boost", 0))
             pattern_hits.append(str(pattern.get("label") or pattern.get("id")))
             pattern_accounts.extend(str(account) for account in pattern.get("accounts", []) if account)
+        pattern_score = min(float(score_model.get("viral_pattern_max", 24)), pattern_score)
         if pattern_hits:
             notes.append(f"爆文库模型：{', '.join(pattern_hits[:3])}")
+        breakdown["爆文结构"] = round(pattern_score, 1)
+
+        shape_score, shape_notes = story_shape_score(title, score_model)
+        breakdown["标题形态"] = round(shape_score, 1)
+        if shape_notes:
+            notes.append(f"标题形态：{', '.join(shape_notes[:4])}")
 
         penalty_hits = keyword_hits(title, weak_penalties)
+        weak_penalty = 0.0
         if penalty_hits and best.get("id") != "consumer_lifestyle":
-            score -= min(8.0, 2.0 * len(penalty_hits))
+            weak_penalty = min(8.0, 2.0 * len(penalty_hits))
             notes.append(f"弱选题扣分：{', '.join(penalty_hits[:3])}")
+        breakdown["弱选题扣分"] = round(-weak_penalty, 1)
+
+        risk_points, risk_notes = risk_penalty(title, config)
+        if risk_notes:
+            notes.extend(risk_notes)
+        breakdown["风险扣分"] = round(-risk_points, 1)
 
         clean_len = len(title)
+        length_adjustment = 0.0
         if 12 <= clean_len <= 90:
-            score += 2.0
+            length_adjustment = 2.0
         elif clean_len > 130:
-            score -= 3.0
+            length_adjustment = -3.0
+        breakdown["标题长度"] = length_adjustment
 
-        item.raw_score = round(score, 1)
+        score = sum(breakdown.values())
+
+        item.raw_score = round(clamp(score, 0, 100), 1)
         item.topic_id = best.get("id", "")
         item.topic_label = best.get("label", "")
         item.angle = best.get("angle", "")
@@ -400,6 +491,7 @@ def score_items(items: List[SourceItem], config: Dict[str, Any], mode: str = "da
                 accounts.append(account)
         item.accounts = accounts
         item.matched_keywords = best_hits
+        item.score_breakdown = breakdown
         item.score_notes = notes
         scored.append(item)
 
@@ -518,6 +610,7 @@ def build_report(
                 f"- 链接：{item.url}",
                 f"- 推荐角度：{item.angle}",
                 f"- 建议账号：{', '.join(item.accounts) if item.accounts else '待定'}",
+                f"- 评分拆解：{'; '.join(f'{k} {v:+g}' for k, v in item.score_breakdown.items())}",
                 f"- 判断依据：{'; '.join(item.score_notes)}",
                 "- 备选标题：",
             ]
