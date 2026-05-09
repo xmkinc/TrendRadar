@@ -9,7 +9,7 @@ app:
   freshness_days: 3
   max_items_per_source: 40
   top_n: 10
-  push_top_n: 8
+  push_top_n: 10
   max_per_topic: 3
   output_dir: "output/insdaily"
   modes:
@@ -18,7 +18,7 @@ app:
       description: "每天/每天两次推送，主打当天能发的明星、娱乐、海外社会和关系热议。"
       freshness_days: 2
       top_n: 10
-      push_top_n: 6
+      push_top_n: 10
       max_per_topic: 2
       source_ids:
         - "hk01-news-sitemap"
@@ -44,9 +44,9 @@ app:
       title: "insdaily 专题选题池"
       description: "每周推送，主打可策划、可二次加工的女性、人物、消费、审美和海外生活专题。"
       freshness_days: 10
-      top_n: 14
-      push_top_n: 10
-      max_per_topic: 3
+      top_n: 20
+      push_top_n: 20
+      max_per_topic: 4
       source_ids:
         - "hk01-news-sitemap"
         - "vogue"
